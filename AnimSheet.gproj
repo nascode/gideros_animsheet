@@ -1,0 +1,9 @@
+<project>
+ <properties autorotation="0" fps="60" scaleMode="2" mouseToTouch="1" iosDevice="0" packageName="com.yourdomain.yourapp" logicalHeight="480" logicalWidth="320" mouseTouchOrder="0" retinaDisplay="0" touchToMouse="1" assetsOnly="0" orientation="0" architecture="0">
+  <imageScales/>
+ </properties>
+ <file source="megaman.txt"/>
+ <file source="megaman.png"/>
+ <file source="main.lua"/>
+ <file source="animsheet.lua"/>
+</project>
