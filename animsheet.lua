@@ -50,10 +50,30 @@ function AnimSheetInstance:init(texture, animSheet)
 	self.animSheet = animSheet
 	self.currentAnimation = nil
 	self.currentFrame = 1
+	self.timer = nil
+	self.delayedPlay = nil
 	
-	self.timer = Timer.new(0)
-	self.timer:addEventListener(Event.TIMER, self.onTimer, self)
-	self.timer:addEventListener(Event.TIMER_COMPLETE, self.onTimerComplete, self)
+	self:addEventListener(Event.ADDED_TO_STAGE, self.onAddedToStage, self)
+end
+
+function AnimSheetInstance:onAddedToStage(event)
+	self:addEventListener(Event.REMOVED_FROM_STAGE, self.onRemovedFromStage, self)
+	
+	local timer = Timer.new(0)
+	timer:addEventListener(Event.TIMER, self.onTimer, self)
+	timer:addEventListener(Event.TIMER_COMPLETE, self.onTimerComplete, self)
+	self.timer = timer
+	
+	local delayedPlay = self.delayedPlay
+	if delayedPlay then
+		self:play(delayedPlay.animation, delayedPlay.frame)
+		self.delayedPlay = nil
+	end
+end
+
+function AnimSheetInstance:onRemovedFromStage(event)
+	self.timer:stop()
+	self.timer = nil
 end
 
 function AnimSheetInstance:onTimer(event)
@@ -78,32 +98,44 @@ end
 
 -- instance:play("animation") -- start animation from frame 1
 -- instance:play("animation", 3) -- start animation from frame 3
-function AnimSheetInstance:play(animation, frame)
-	if animation ~= nil and type(animation) == "string" then
-		self.currentAnimation = self.animSheet.animation[animation]
-		
-		self.timer:reset()
-		self.timer:setRepeatCount(self.currentAnimation.count * #self.currentAnimation.frames)
-		self.timer:setDelay(self.currentAnimation.durationPerFrame)
-		
-		if frame == nil then -- play another animation from frame 1
-			self.currentFrame = 1
-		else -- play another animation from certain frame
-			self.currentFrame = frame 
+function AnimSheetInstance:play(animation_, frame_)
+	local timer = self.timer
+	
+	if timer == nil then -- delay playing until addedd to stage
+		self.delayedPlay = {animation = animation_, frame = frame_}
+	else
+		if animation_ ~= nil then
+			self.currentAnimation = self.animSheet.animation[animation_]
+			
+			timer:reset()
+			timer:setRepeatCount(self.currentAnimation.count * #self.currentAnimation.frames)
+			timer:setDelay(self.currentAnimation.durationPerFrame)
+			
+			if frame_ == nil then -- play another animation from frame 1
+				self.currentFrame = 1
+			else -- play another animation from certain frame
+				self.currentFrame = frame_ 
+			end
+			
+			self:setTextureRegion(self.animSheet.region[ self.currentAnimation.frames[self.currentFrame] ])
 		end
 		
-		self:setTextureRegion(self.animSheet.region[ self.currentAnimation.frames[self.currentFrame] ])
+		timer:start()
 	end
-	
-	self.timer:start()
 end
 
 -- is this animation paused?
 function AnimSheetInstance:isPaused()
-	return not self.timer:isRunning()
+	if self.timer then 
+		return not self.timer:isRunning()
+	else
+		return true
+	end
 end
 
 -- pause animation
 function AnimSheetInstance:pause()
-	self.timer:stop()
+	if self.timer then
+		self.timer:stop()
+	end
 end
